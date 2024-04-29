@@ -1,8 +1,9 @@
 import sys
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, \
-    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog, QInputDialog
+    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog
+import datetime
 
 
 class PayrollApp(QMainWindow):
@@ -47,25 +48,19 @@ class PayrollApp(QMainWindow):
         self.report_button = QPushButton("Создать отчет")
 
         # Стилизация кнопки отчета
-        self.report_button.setStyleSheet("background-color: #008CBA; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+        self.report_button.setStyleSheet("background-color: #800080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
-        # Кнопка расчета общей зарплаты
-        self.total_payroll_button = QPushButton("Общая зарплата")
-
-        # Стилизация кнопки расчета общей зарплаты
-        self.total_payroll_button.setStyleSheet("background-color: #9400D3; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
-
-        # Кнопка фильтрации сотрудников
+        # Кнопка фильтрации
         self.filter_button = QPushButton("Фильтр")
 
-        # Стилизация кнопки фильтрации сотрудников
+        # Стилизация кнопки фильтрации
         self.filter_button.setStyleSheet("background-color: #FFA500; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
         # Кнопка сброса фильтрации
         self.reset_filter_button = QPushButton("Сбросить фильтр")
 
         # Стилизация кнопки сброса фильтрации
-        self.reset_filter_button.setStyleSheet("background-color: #A9A9A9; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+        self.reset_filter_button.setStyleSheet("background-color: #808080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
         # Добавляем элементы на layout
         layout.addWidget(QLabel("ФИО:"))
@@ -79,7 +74,6 @@ class PayrollApp(QMainWindow):
         layout.addWidget(self.table)
         layout.addWidget(self.delete_button)
         layout.addWidget(self.report_button)
-        layout.addWidget(self.total_payroll_button)
         layout.addWidget(self.filter_button)
         layout.addWidget(self.reset_filter_button)
 
@@ -98,8 +92,7 @@ class PayrollApp(QMainWindow):
         self.calculate_button.clicked.connect(self.calculate_and_save)
         self.delete_button.clicked.connect(self.delete_employee)
         self.report_button.clicked.connect(self.create_report)
-        self.total_payroll_button.clicked.connect(self.calculate_total_payroll)
-        self.filter_button.clicked.connect(self.filter_employees)
+        self.filter_button.clicked.connect(self.apply_filter)
         self.reset_filter_button.clicked.connect(self.reset_filter)
 
         # Обновляем ID при каждом запуске программы
@@ -178,36 +171,26 @@ class PayrollApp(QMainWindow):
         self.db.commit()
 
     def create_report(self):
-        report_text = "Отчет о сотрудниках:\n\n"
-        for row in range(self.table.rowCount()):
-            employee_id = row + 1
-            name = self.table.item(row, 1).text()
-            hours = self.table.item(row, 2).text()
-            rate = self.table.item(row, 3).text()
-            report_text += f"ID: {employee_id}, ФИО: {name}, Отработано часов: {hours}, Заработная плата: {rate}\n"
-
-        file_path, _ = QFileDialog.getSaveFileName(self, "Сохранить отчет", "", "Text Files (*.txt)")
+        file_name = f"Отчет_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        file_path, _ = QFileDialog.getSaveFileName(self, "Сохранить отчет", file_name, "Text Files (*.txt)")
         if file_path:
             with open(file_path, "w") as file:
-                file.write(report_text)
+                file.write("Отчет о сотрудниках:\n\n")
+                total_payroll = 0
+                for row in range(self.table.rowCount()):
+                    employee_id = row + 1
+                    name = self.table.item(row, 1).text()
+                    hours = self.table.item(row, 2).text()
+                    rate = self.table.item(row, 3).text()
+                    file.write(f"ID: {employee_id}, ФИО: {name}, Отработано часов: {hours}, Заработная плата: {rate}\n")
+                    total_payroll += float(rate.split()[0])
+                file.write(f"\nОбщая зарплата всех сотрудников: {total_payroll} руб.")
 
-    def calculate_total_payroll(self):
-        total_payroll = sum(float(self.table.item(row, 3).text().split()[0]) for row in range(self.table.rowCount()))
-        QMessageBox.information(None, "Общая зарплата", f"Общая зарплата всех сотрудников: {total_payroll} руб.")
-
-    def filter_employees(self):
-        filter_text, ok = QInputDialog.getText(self, "Фильтрация списка сотрудников", "Введите текст для фильтрации:")
-        if ok:
-            for row in range(self.table.rowCount()):
-                item = self.table.item(row, 1)
-                if filter_text.lower() not in item.text().lower():
-                    self.table.hideRow(row)
-                else:
-                    self.table.showRow(row)
+    def apply_filter(self):
+        pass
 
     def reset_filter(self):
-        for row in range(self.table.rowCount()):
-            self.table.showRow(row)
+        pass
 
 
 if __name__ == "__main__":
@@ -216,3 +199,4 @@ if __name__ == "__main__":
     window = PayrollApp()
     window.show()
     sys.exit(app.exec())
+
