@@ -2,8 +2,51 @@ import sys
 from PySide6.QtGui import QFont
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, \
-    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog
-import datetime
+    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog, QDialog
+from datetime import datetime
+
+
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Вход")
+        self.setFixedSize(400, 200)  # Увеличиваем размер окна
+
+        layout = QVBoxLayout()
+
+        self.username_input = QLineEdit()
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+
+        login_button = QPushButton("Войти")
+        login_button.clicked.connect(self.login)
+
+        layout.addWidget(QLabel("Логин:"))
+        layout.addWidget(self.username_input)
+        layout.addWidget(QLabel("Пароль:"))
+        layout.addWidget(self.password_input)
+        layout.addWidget(login_button)
+
+        # Устанавливаем размер и шрифт для полей ввода
+        font = QFont("Arial Black", 12)
+        self.username_input.setFont(font)
+        self.password_input.setFont(font)
+
+        # Устанавливаем размер и шрифт для кнопки
+        login_button.setFont(font)
+        login_button.setStyleSheet("font-size: 18px;")  # Изменяем размер кнопки
+
+        self.setLayout(layout)
+
+    def login(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+
+        # Добавьте здесь логику проверки логина и пароля
+        if username == "admin" and password == "admin":
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Ошибка", "Неверный логин или пароль")
 
 
 class PayrollApp(QMainWindow):
@@ -50,18 +93,6 @@ class PayrollApp(QMainWindow):
         # Стилизация кнопки отчета
         self.report_button.setStyleSheet("background-color: #800080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
-        # Кнопка фильтрации
-        self.filter_button = QPushButton("Фильтр")
-
-        # Стилизация кнопки фильтрации
-        self.filter_button.setStyleSheet("background-color: #FFA500; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
-
-        # Кнопка сброса фильтрации
-        self.reset_filter_button = QPushButton("Сбросить фильтр")
-
-        # Стилизация кнопки сброса фильтрации
-        self.reset_filter_button.setStyleSheet("background-color: #808080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
-
         # Добавляем элементы на layout
         layout.addWidget(QLabel("ФИО:"))
         layout.addWidget(self.name_input)
@@ -74,8 +105,6 @@ class PayrollApp(QMainWindow):
         layout.addWidget(self.table)
         layout.addWidget(self.delete_button)
         layout.addWidget(self.report_button)
-        layout.addWidget(self.filter_button)
-        layout.addWidget(self.reset_filter_button)
 
         # Подключение к базе данных SQLite и создание таблицы сотрудников
         self.db = QSqlDatabase.addDatabase("QSQLITE")
@@ -92,8 +121,6 @@ class PayrollApp(QMainWindow):
         self.calculate_button.clicked.connect(self.calculate_and_save)
         self.delete_button.clicked.connect(self.delete_employee)
         self.report_button.clicked.connect(self.create_report)
-        self.filter_button.clicked.connect(self.apply_filter)
-        self.reset_filter_button.clicked.connect(self.reset_filter)
 
         # Обновляем ID при каждом запуске программы
         self.update_ids()
@@ -171,7 +198,7 @@ class PayrollApp(QMainWindow):
         self.db.commit()
 
     def create_report(self):
-        file_name = f"Отчет_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
+        file_name = f"Отчет_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
         file_path, _ = QFileDialog.getSaveFileName(self, "Сохранить отчет", file_name, "Text Files (*.txt)")
         if file_path:
             with open(file_path, "w") as file:
@@ -186,17 +213,13 @@ class PayrollApp(QMainWindow):
                     total_payroll += float(rate.split()[0])
                 file.write(f"\nОбщая зарплата всех сотрудников: {total_payroll} руб.")
 
-    def apply_filter(self):
-        pass
-
-    def reset_filter(self):
-        pass
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setFont(QFont("Arial", 12))  # Установка шрифта для всего приложения
-    window = PayrollApp()
-    window.show()
-    sys.exit(app.exec())
+    app.setFont(QFont("Arial Black", 14))  # Установка шрифта для всего приложения
 
+    login_dialog = LoginDialog()
+    if login_dialog.exec() == QDialog.Accepted:
+        window = PayrollApp()
+        window.show()
+        sys.exit(app.exec())
