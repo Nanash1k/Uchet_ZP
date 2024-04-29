@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/Иконка3.png</file>
+    <file>icons/Иконка2.png</file>
+    <file>icons/favicon-128.ico</file>
+    <file>icons/Иконка.png</file>
+    <file>icons/ИконкаSVG.svg</file>
+  </qresource>
+</RCC>
