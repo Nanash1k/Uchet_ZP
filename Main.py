@@ -93,6 +93,10 @@ class PayrollApp(QMainWindow):
         # Стилизация кнопки отчета
         self.report_button.setStyleSheet("background-color: #800080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
+        # Кнопка для отображения общей зарплаты
+        self.total_payroll_button = QPushButton("Общая зарплата")
+        self.total_payroll_button.setStyleSheet("background-color: #008080; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+
         # Добавляем элементы на layout
         layout.addWidget(QLabel("ФИО:"))
         layout.addWidget(self.name_input)
@@ -105,6 +109,7 @@ class PayrollApp(QMainWindow):
         layout.addWidget(self.table)
         layout.addWidget(self.delete_button)
         layout.addWidget(self.report_button)
+        layout.addWidget(self.total_payroll_button)
 
         # Подключение к базе данных SQLite и создание таблицы сотрудников
         self.db = QSqlDatabase.addDatabase("QSQLITE")
@@ -121,6 +126,7 @@ class PayrollApp(QMainWindow):
         self.calculate_button.clicked.connect(self.calculate_and_save)
         self.delete_button.clicked.connect(self.delete_employee)
         self.report_button.clicked.connect(self.create_report)
+        self.total_payroll_button.clicked.connect(self.show_total_payroll)
 
         # Обновляем ID при каждом запуске программы
         self.update_ids()
@@ -212,6 +218,10 @@ class PayrollApp(QMainWindow):
                     file.write(f"ID: {employee_id}, ФИО: {name}, Отработано часов: {hours}, Заработная плата: {rate}\n")
                     total_payroll += float(rate.split()[0])
                 file.write(f"\nОбщая зарплата всех сотрудников: {total_payroll} руб.")
+
+    def show_total_payroll(self):
+        total_payroll = sum(float(self.table.item(row, 3).text().split()[0]) for row in range(self.table.rowCount()))
+        QMessageBox.information(self, "Общая зарплата", f"Общая зарплата всех сотрудников: {total_payroll} руб.")
 
 
 if __name__ == "__main__":
