@@ -151,12 +151,17 @@ class PayrollApp(QMainWindow):
         hours = self.hours_input.text()
         rate = self.rate_input.text()
 
-        if not name or not hours or not rate:
-            QMessageBox.warning(self, "Предупреждение", "Заполните все поля.")
+        try:
+            hours = int(hours)
+            rate = float(rate)
+        except ValueError:
+            QMessageBox.warning(self, "Предупреждение", "Введите корректные данные в поля отработанных часов и почасовой ставки.")
             return
 
-        hours = int(hours)
-        rate = float(rate)
+        if not name:
+            QMessageBox.warning(self, "Предупреждение", "Заполните поле ФИО.")
+            return
+
         total = hours * rate
 
         query = QSqlQuery()
