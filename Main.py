@@ -1,8 +1,9 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog
-from PySide6.QtGui import QFont
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QColor
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, \
+    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView, QFileDialog, QInputDialog
+
 
 class PayrollApp(QMainWindow):
     def __init__(self):
@@ -48,6 +49,24 @@ class PayrollApp(QMainWindow):
         # Стилизация кнопки отчета
         self.report_button.setStyleSheet("background-color: #008CBA; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
 
+        # Кнопка расчета общей зарплаты
+        self.total_payroll_button = QPushButton("Общая зарплата")
+
+        # Стилизация кнопки расчета общей зарплаты
+        self.total_payroll_button.setStyleSheet("background-color: #9400D3; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+
+        # Кнопка фильтрации сотрудников
+        self.filter_button = QPushButton("Фильтр")
+
+        # Стилизация кнопки фильтрации сотрудников
+        self.filter_button.setStyleSheet("background-color: #FFA500; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+
+        # Кнопка сброса фильтрации
+        self.reset_filter_button = QPushButton("Сбросить фильтр")
+
+        # Стилизация кнопки сброса фильтрации
+        self.reset_filter_button.setStyleSheet("background-color: #A9A9A9; color: white; border: none; padding: 10px 24px; text-align: center; font-size: 18px; border-radius: 8px;")
+
         # Добавляем элементы на layout
         layout.addWidget(QLabel("ФИО:"))
         layout.addWidget(self.name_input)
@@ -60,6 +79,9 @@ class PayrollApp(QMainWindow):
         layout.addWidget(self.table)
         layout.addWidget(self.delete_button)
         layout.addWidget(self.report_button)
+        layout.addWidget(self.total_payroll_button)
+        layout.addWidget(self.filter_button)
+        layout.addWidget(self.reset_filter_button)
 
         # Подключение к базе данных SQLite и создание таблицы сотрудников
         self.db = QSqlDatabase.addDatabase("QSQLITE")
@@ -69,7 +91,6 @@ class PayrollApp(QMainWindow):
             sys.exit(1)
         self.create_table()
 
-
         # Загрузка списка сотрудников
         self.load_employees()
 
@@ -77,6 +98,9 @@ class PayrollApp(QMainWindow):
         self.calculate_button.clicked.connect(self.calculate_and_save)
         self.delete_button.clicked.connect(self.delete_employee)
         self.report_button.clicked.connect(self.create_report)
+        self.total_payroll_button.clicked.connect(self.calculate_total_payroll)
+        self.filter_button.clicked.connect(self.filter_employees)
+        self.reset_filter_button.clicked.connect(self.reset_filter)
 
         # Обновляем ID при каждом запуске программы
         self.update_ids()
@@ -166,6 +190,25 @@ class PayrollApp(QMainWindow):
         if file_path:
             with open(file_path, "w") as file:
                 file.write(report_text)
+
+    def calculate_total_payroll(self):
+        total_payroll = sum(float(self.table.item(row, 3).text().split()[0]) for row in range(self.table.rowCount()))
+        QMessageBox.information(None, "Общая зарплата", f"Общая зарплата всех сотрудников: {total_payroll} руб.")
+
+    def filter_employees(self):
+        filter_text, ok = QInputDialog.getText(self, "Фильтрация списка сотрудников", "Введите текст для фильтрации:")
+        if ok:
+            for row in range(self.table.rowCount()):
+                item = self.table.item(row, 1)
+                if filter_text.lower() not in item.text().lower():
+                    self.table.hideRow(row)
+                else:
+                    self.table.showRow(row)
+
+    def reset_filter(self):
+        for row in range(self.table.rowCount()):
+            self.table.showRow(row)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
