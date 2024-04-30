@@ -1,4 +1,5 @@
 import sys
+
 from PySide6.QtGui import QFont
 from PySide6.QtSql import QSqlDatabase, QSqlQuery
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, \
@@ -131,9 +132,11 @@ class PayrollApp(QMainWindow):
         # Обновляем ID при каждом запуске программы
         self.update_ids()
 
+
     def create_table(self):
         query = QSqlQuery()
         query.exec("CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY, name TEXT, hours INTEGER, rate REAL)")
+
 
     def load_employees(self):
         query = QSqlQuery("SELECT * FROM employees")
@@ -144,7 +147,10 @@ class PayrollApp(QMainWindow):
             self.table.setItem(row, 0, QTableWidgetItem(str(query.value(0))))
             self.table.setItem(row, 1, QTableWidgetItem(query.value(1)))
             self.table.setItem(row, 2, QTableWidgetItem(str(query.value(2))))
-            self.table.setItem(row, 3, QTableWidgetItem(f"{query.value(2) * query.value(3)} руб."))
+            rate = float(query.value(3)) * 0.8  # 20% налога
+            total_payroll = float(query.value(2)) * rate
+            self.table.setItem(row, 3, QTableWidgetItem(f"{total_payroll:.2f} руб."))
+
 
     def calculate_and_save(self):
         name = self.name_input.text()
@@ -162,7 +168,7 @@ class PayrollApp(QMainWindow):
             QMessageBox.warning(self, "Предупреждение", "Заполните поле ФИО.")
             return
 
-        total = hours * rate
+        total = hours * rate * 0.8  # 20% налога
 
         query = QSqlQuery()
         query.prepare("INSERT INTO employees (name, hours, rate) VALUES (:name, :hours, :rate)")
@@ -178,6 +184,7 @@ class PayrollApp(QMainWindow):
 
         # Обновляем ID
         self.update_ids()
+
 
     def delete_employee(self):
         selected_row = self.table.currentRow()
@@ -196,6 +203,7 @@ class PayrollApp(QMainWindow):
         self.db.commit()  # Сохраняем изменения в базе данных
         QMessageBox.information(None, "Успех", "Запись успешно удалена.")
 
+
     def update_ids(self):
         for row in range(self.table.rowCount()):
             self.table.item(row, 0).setText(str(row + 1))
@@ -207,6 +215,7 @@ class PayrollApp(QMainWindow):
             if old_id != new_id:
                 query.exec(f"UPDATE employees SET id = {new_id} WHERE id = {old_id}")
         self.db.commit()
+
 
     def create_report(self):
         file_name = f"Отчет_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.txt"
@@ -224,9 +233,11 @@ class PayrollApp(QMainWindow):
                     total_payroll += float(rate.split()[0])
                 file.write(f"\nОбщая зарплата всех сотрудников: {total_payroll} руб.")
 
+
     def show_total_payroll(self):
         total_payroll = sum(float(self.table.item(row, 3).text().split()[0]) for row in range(self.table.rowCount()))
-        QMessageBox.information(self, "Общая зарплата", f"Общая зарплата всех сотрудников: {total_payroll} руб.")
+        total_payroll -= total_payroll * 0  # Учитываем налог в 20%
+        QMessageBox.information(self, "Общая зарплата", f"Общая зарплата всех сотрудников: {total_payroll:.2f} руб.")
 
 
 if __name__ == "__main__":
